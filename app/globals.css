@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 142 38% 14%;
+  --card: 0 0% 100%;
+  --border: 142 25% 88%;
+  --muted: 138 32% 96%;
+  --primary: 142 61% 35%;
+  --ring: 142 61% 35%;
+}
+
+.dark {
+  --background: 150 12% 8%;
+  --foreground: 120 18% 96%;
+  --card: 149 12% 11%;
+  --border: 149 14% 20%;
+  --muted: 149 12% 15%;
+  --primary: 142 55% 45%;
+  --ring: 142 55% 45%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-background text-foreground antialiased;
+}
+
+* {
+  @apply border-border;
+}
+
+.glass {
+  background: linear-gradient(to bottom right, rgba(255,255,255,.82), rgba(255,255,255,.58));
+  backdrop-filter: blur(14px);
+}
+
+.dark .glass {
+  background: linear-gradient(to bottom right, rgba(24,31,27,.9), rgba(24,31,27,.7));
+}
