@@ -2,10 +2,14 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase-client";
-import { Button, Card, Input, Textarea } from "@/components/ui";
 
-export function AdminAnnouncementForm() {
+type Props = {
+  onPublished?: () => void;
+};
+
+export function AdminAnnouncementForm({ onPublished }: Props) {
   const supabase = createClient();
+
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,9 +23,10 @@ export function AdminAnnouncementForm() {
     try {
       const {
         data: { user },
+        error: userError,
       } = await supabase.auth.getUser();
 
-      if (!user) {
+      if (userError || !user) {
         setMessage("Silakan login dulu.");
         setLoading(false);
         return;
@@ -46,48 +51,78 @@ export function AdminAnnouncementForm() {
         return;
       }
 
-      await fetch("/api/notify/announcement", {
+      const notifyRes = await fetch("/api/notify/announcement", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           announcementId: data.id,
           title: data.title,
         }),
       });
 
+      const notifyJson = await notifyRes.json().catch(() => null);
+
+      if (!notifyRes.ok) {
+        setMessage(
+          notifyJson?.error ||
+            "Informasi tersimpan, tetapi notifikasi gagal dikirim."
+        );
+        setLoading(false);
+        return;
+      }
+
       setTitle("");
       setContent("");
       setMessage("Informasi berhasil dipublikasikan dan notifikasi dikirim.");
+
+      if (onPublished) {
+        onPublished();
+      }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Terjadi kesalahan.");
+      setMessage(
+        error instanceof Error ? error.message : "Terjadi kesalahan."
+      );
     }
 
     setLoading(false);
   }
 
   return (
-    <Card className="p-5">
-      <h2 className="text-xl font-bold">Kelola Informasi Teks</h2>
+    <div className="rounded-[28px] border border-white/10 bg-black/20 p-5">
+      <h2 className="text-2xl font-bold text-white">Kelola Informasi Teks</h2>
 
-      <form onSubmit={handlePublish} className="mt-4 space-y-4">
-        <Input
+      <form onSubmit={handlePublish} className="mt-5 space-y-4">
+        <input
+          type="text"
           placeholder="Judul informasi"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          className="w-full rounded-3xl border border-white/10 bg-transparent px-5 py-4 text-white outline-none placeholder:text-white/45"
+          required
         />
 
-        <Textarea
+        <textarea
           placeholder="Isi informasi"
           value={content}
           onChange={(e) => setContent(e.target.value)}
+          className="min-h-[160px] w-full rounded-3xl border border-white/10 bg-transparent px-5 py-4 text-white outline-none placeholder:text-white/45"
+          required
         />
 
-        <Button disabled={loading}>
+        <button
+          type="submit"
+          disabled={loading}
+          className="rounded-full bg-green-500 px-6 py-3 font-semibold text-white disabled:opacity-60"
+        >
           {loading ? "Memproses..." : "Publikasikan info"}
-        </Button>
+        </button>
       </form>
 
-      {message && <p className="mt-4 text-sm text-foreground/70">{message}</p>}
-    </Card>
+      {message ? (
+        <p className="mt-4 text-sm text-white/70">{message}</p>
+      ) : null}
+    </div>
   );
-}   
+}
