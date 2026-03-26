@@ -20,7 +20,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const accessToken = authHeader.slice("Bearer ".length).trim();
+    const accessToken = authHeader.replace("Bearer ", "").trim();
+
     if (!accessToken) {
       return NextResponse.json(
         { error: "Unauthorized: empty access token" },
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
 
     const payload = {
       user_id: user.id,
-      channel: "push" as const,
+      channel: "push",
       provider: "onesignal",
       external_user_id: user.id,
       player_id: subscriptionId,
@@ -75,10 +76,7 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json({
-      ok: true,
-      data,
-    });
+    return NextResponse.json({ ok: true, data });
   } catch (error) {
     return NextResponse.json(
       {

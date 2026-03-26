@@ -12,5 +12,10 @@ export function createServiceRoleClient() {
     throw new Error("SUPABASE_SERVICE_ROLE_KEY is required");
   }
 
-  return createClient(url, serviceRoleKey);
+  return createClient(url, serviceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
 }

@@ -4,8 +4,13 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase-client";
 import { Button, Card, Input, Textarea } from "@/components/ui";
 
-export function AdminAnnouncementForm() {
+type Props = {
+  onPublished?: () => void;
+};
+
+export function AdminAnnouncementForm({ onPublished }: Props) {
   const supabase = createClient();
+
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
@@ -72,8 +77,12 @@ export function AdminAnnouncementForm() {
       setTitle("");
       setContent("");
       setMessage("Informasi berhasil dipublikasikan dan notifikasi dikirim.");
+
+      if (onPublished) onPublished();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Terjadi kesalahan.");
+      setMessage(
+        error instanceof Error ? error.message : "Terjadi kesalahan."
+      );
     }
 
     setLoading(false);
@@ -88,12 +97,14 @@ export function AdminAnnouncementForm() {
           placeholder="Judul informasi"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          required
         />
 
         <Textarea
           placeholder="Isi informasi"
           value={content}
           onChange={(e) => setContent(e.target.value)}
+          required
         />
 
         <Button disabled={loading}>
@@ -101,7 +112,9 @@ export function AdminAnnouncementForm() {
         </Button>
       </form>
 
-      {message ? <p className="mt-4 text-sm text-foreground/70">{message}</p> : null}
+      {message ? (
+        <p className="mt-4 text-sm text-foreground/70">{message}</p>
+      ) : null}
     </Card>
   );
 }

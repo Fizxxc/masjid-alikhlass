@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createClient } from "@/lib/supabase-client";
 
 declare global {
   interface Window {
@@ -11,6 +12,38 @@ declare global {
 export function EnableNotificationButton() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const supabase = createClient();
+
+  async function registerSubscription(OneSignal: any) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user?.id || !session.access_token) return false;
+
+    await OneSignal.login(session.user.id);
+
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+
+    const subscriptionId =
+      OneSignal?.User?.PushSubscription?.id ?? null;
+    const optedIn =
+      OneSignal?.User?.PushSubscription?.optedIn ?? false;
+
+    const res = await fetch("/api/push/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        subscriptionId,
+        optedIn,
+      }),
+    });
+
+    return res.ok;
+  }
 
   async function handleEnable() {
     setLoading(true);
@@ -33,7 +66,12 @@ export function EnableNotificationButton() {
             OneSignal?.Notifications?.permission ?? "default";
 
           if (optedIn || permission === "granted") {
-            setMessage("Notifikasi berhasil diaktifkan.");
+            const ok = await registerSubscription(OneSignal);
+            setMessage(
+              ok
+                ? "Notifikasi berhasil diaktifkan."
+                : "Notifikasi aktif, tapi sinkronisasi subscription gagal."
+            );
           } else {
             setMessage("Izin notifikasi belum diberikan.");
           }
@@ -65,6 +103,7 @@ export function EnableNotificationButton() {
       window.OneSignalDeferred.push(async function (OneSignal: any) {
         try {
           await OneSignal.User.PushSubscription.optOut();
+          await registerSubscription(OneSignal);
           setMessage("Notifikasi dimatikan.");
         } catch (error) {
           console.error(error);

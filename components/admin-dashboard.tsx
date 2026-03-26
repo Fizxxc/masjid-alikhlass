@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase-client";
-import { Card } from "@/components/ui";
+import { Card, Button, Input } from "@/components/ui";
 import { AdminAnnouncementForm } from "@/components/admin-announcement-form";
 
 type Report = {
@@ -14,17 +14,71 @@ type Report = {
   created_at: string;
 };
 
-export function AdminDashboard({ reports }: { reports: Report[] }) {
+type Props = {
+  reports: Report[];
+};
+
+export function AdminDashboard({ reports }: Props) {
   const supabase = createClient();
-  const [message, setMessage] = useState("");
+
+  const [slideTitle, setSlideTitle] = useState("");
+  const [slideSubtitle, setSlideSubtitle] = useState("");
+  const [slideImageUrl, setSlideImageUrl] = useState("");
+  const [slideLoading, setSlideLoading] = useState(false);
+  const [slideMessage, setSlideMessage] = useState("");
+  const [reportMessage, setReportMessage] = useState("");
   const [updatingReportId, setUpdatingReportId] = useState<string | null>(null);
+
+  async function saveSlide() {
+    setSlideLoading(true);
+    setSlideMessage("");
+
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        setSlideMessage("Silakan login dulu.");
+        setSlideLoading(false);
+        return;
+      }
+
+      const { error } = await supabase.from("hero_slides").insert({
+        title: slideTitle || null,
+        subtitle: slideSubtitle || null,
+        image_url: slideImageUrl,
+        sort_order: 0,
+        is_active: true,
+        created_by: user.id,
+      });
+
+      if (error) {
+        setSlideMessage(error.message);
+        setSlideLoading(false);
+        return;
+      }
+
+      setSlideTitle("");
+      setSlideSubtitle("");
+      setSlideImageUrl("");
+      setSlideMessage("Slide berhasil ditambahkan.");
+    } catch (error) {
+      setSlideMessage(
+        error instanceof Error ? error.message : "Terjadi kesalahan."
+      );
+    }
+
+    setSlideLoading(false);
+  }
 
   async function updateStatus(
     id: string,
-    status: "in_review" | "resolved"
+    status: "in_review" | "resolved" | "rejected"
   ) {
     setUpdatingReportId(id);
-    setMessage("");
+    setReportMessage("");
 
     try {
       const { error } = await supabase
@@ -33,16 +87,16 @@ export function AdminDashboard({ reports }: { reports: Report[] }) {
         .eq("id", id);
 
       if (error) {
-        setMessage(error.message);
+        setReportMessage(error.message);
         setUpdatingReportId(null);
         return;
       }
 
-      setMessage(
+      setReportMessage(
         "Status laporan diperbarui. Refresh halaman untuk melihat data terbaru."
       );
     } catch (error) {
-      setMessage(
+      setReportMessage(
         error instanceof Error ? error.message : "Terjadi kesalahan."
       );
     }
@@ -57,9 +111,38 @@ export function AdminDashboard({ reports }: { reports: Report[] }) {
 
         <Card className="p-5">
           <h2 className="text-xl font-bold">Kelola Slide Home</h2>
-          <p className="mt-2 text-sm text-foreground/70">
-            Bagian ini bisa kamu sambungkan ke hero_slides kalau diperlukan.
-          </p>
+
+          <div className="mt-4 space-y-4">
+            <Input
+              placeholder="Judul slide"
+              value={slideTitle}
+              onChange={(e) => setSlideTitle(e.target.value)}
+            />
+
+            <Input
+              placeholder="Subjudul"
+              value={slideSubtitle}
+              onChange={(e) => setSlideSubtitle(e.target.value)}
+            />
+
+            <Input
+              placeholder="URL gambar"
+              value={slideImageUrl}
+              onChange={(e) => setSlideImageUrl(e.target.value)}
+            />
+
+            <Button
+              type="button"
+              onClick={saveSlide}
+              disabled={slideLoading}
+            >
+              {slideLoading ? "Memproses..." : "Tambah slide"}
+            </Button>
+
+            {slideMessage ? (
+              <p className="text-sm text-foreground/70">{slideMessage}</p>
+            ) : null}
+          </div>
         </Card>
       </div>
 
@@ -68,7 +151,9 @@ export function AdminDashboard({ reports }: { reports: Report[] }) {
 
         <div className="mt-4 space-y-3">
           {reports.length === 0 ? (
-            <p className="text-sm text-foreground/70">Belum ada laporan masuk.</p>
+            <p className="text-sm text-foreground/70">
+              Belum ada laporan masuk.
+            </p>
           ) : (
             reports.map((report) => (
               <div key={report.id} className="rounded-2xl border p-4">
@@ -80,7 +165,7 @@ export function AdminDashboard({ reports }: { reports: Report[] }) {
                     </p>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => updateStatus(report.id, "in_review")}
                       disabled={updatingReportId === report.id}
@@ -88,12 +173,21 @@ export function AdminDashboard({ reports }: { reports: Report[] }) {
                     >
                       Proses
                     </button>
+
                     <button
                       onClick={() => updateStatus(report.id, "resolved")}
                       disabled={updatingReportId === report.id}
                       className="rounded-full border px-3 py-1 text-xs disabled:opacity-60"
                     >
                       Selesai
+                    </button>
+
+                    <button
+                      onClick={() => updateStatus(report.id, "rejected")}
+                      disabled={updatingReportId === report.id}
+                      className="rounded-full border px-3 py-1 text-xs disabled:opacity-60"
+                    >
+                      Tolak
                     </button>
                   </div>
                 </div>
@@ -110,7 +204,9 @@ export function AdminDashboard({ reports }: { reports: Report[] }) {
           )}
         </div>
 
-        {message ? <p className="mt-4 text-sm text-foreground/70">{message}</p> : null}
+        {reportMessage ? (
+          <p className="mt-4 text-sm text-foreground/70">{reportMessage}</p>
+        ) : null}
       </Card>
     </div>
   );
