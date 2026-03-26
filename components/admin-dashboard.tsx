@@ -90,7 +90,7 @@ export function AdminDashboard({ reports }: { reports: Report[] }) {
       }
 
       setAnnouncement({ title: "", content: "" });
-      setMessage("Informasi teks berhasil dipublikasikan dan notifikasi dikirim.");
+      setMessage("Informasi berhasil dipublikasikan dan notifikasi dikirim.");
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Terjadi kesalahan."
@@ -161,7 +161,9 @@ export function AdminDashboard({ reports }: { reports: Report[] }) {
         return;
       }
 
-      setMessage("Status laporan diperbarui. Silakan refresh untuk melihat data terbaru.");
+      setMessage(
+        "Status laporan diperbarui. Silakan refresh untuk melihat data terbaru."
+      );
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Terjadi kesalahan."

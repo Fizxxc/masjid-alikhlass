@@ -38,18 +38,6 @@ export function OneSignalInit() {
               position: "bottom-right",
               size: "medium",
               theme: "default",
-              text: {
-                "tip.state.unsubscribed": "Aktifkan notifikasi",
-                "tip.state.subscribed": "Notifikasi aktif",
-                "tip.state.blocked": "Notifikasi diblokir",
-                "message.prenotify": "Klik untuk aktifkan notifikasi",
-                "message.action.subscribed": "Terima kasih sudah subscribe",
-                "message.action.resubscribed": "Notifikasi diaktifkan lagi",
-                "message.action.unsubscribed": "Notifikasi dimatikan",
-                "dialog.main.title": "Kelola notifikasi situs",
-                "dialog.main.button.subscribe": "Aktifkan",
-                "dialog.main.button.unsubscribe": "Matikan",
-              },
             },
             promptOptions: {
               slidedown: {
@@ -59,7 +47,7 @@ export function OneSignalInit() {
                     autoPrompt: false,
                     text: {
                       actionMessage:
-                        "Aktifkan notifikasi untuk menerima laporan dan update penting dari Masjid Al-Ikhlas.",
+                        "Aktifkan notifikasi untuk menerima update penting dari Masjid Al-Ikhlas.",
                       acceptButton: "Aktifkan",
                       cancelButton: "Nanti",
                     },
