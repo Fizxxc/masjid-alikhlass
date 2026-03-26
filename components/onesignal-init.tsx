@@ -53,7 +53,7 @@ export function OneSignalInit() {
                     },
                     delay: {
                       pageViews: 1,
-                      timeDelay: 5,
+                      timeDelay: 3,
                     },
                   },
                 ],

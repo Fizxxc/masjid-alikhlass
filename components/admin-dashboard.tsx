@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase-client";
-import { Button, Card, Input, Textarea } from "@/components/ui";
+import { Card } from "@/components/ui";
+import { AdminAnnouncementForm } from "@/components/admin-announcement-form";
 
 type Report = {
   id: string;
@@ -15,132 +16,8 @@ type Report = {
 
 export function AdminDashboard({ reports }: { reports: Report[] }) {
   const supabase = createClient();
-
-  const [announcement, setAnnouncement] = useState({
-    title: "",
-    content: "",
-  });
-
-  const [slide, setSlide] = useState({
-    title: "",
-    subtitle: "",
-    imageUrl: "",
-  });
-
   const [message, setMessage] = useState("");
-  const [loadingAnnouncement, setLoadingAnnouncement] = useState(false);
-  const [loadingSlide, setLoadingSlide] = useState(false);
   const [updatingReportId, setUpdatingReportId] = useState<string | null>(null);
-
-  async function saveAnnouncement() {
-    setLoadingAnnouncement(true);
-    setMessage("");
-
-    try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        setMessage("Silakan login dulu.");
-        setLoadingAnnouncement(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("announcements")
-        .insert({
-          title: announcement.title,
-          content: announcement.content,
-          excerpt: announcement.content.slice(0, 120),
-          is_published: true,
-          published_at: new Date().toISOString(),
-          created_by: user.id,
-        })
-        .select()
-        .single();
-
-      if (error) {
-        setMessage(error.message);
-        setLoadingAnnouncement(false);
-        return;
-      }
-
-      const notifyRes = await fetch("/api/notify/announcement", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          announcementId: data.id,
-          title: data.title,
-        }),
-      });
-
-      const notifyJson = await notifyRes.json().catch(() => null);
-
-      if (!notifyRes.ok) {
-        setMessage(
-          notifyJson?.error ||
-            "Informasi tersimpan, tetapi notifikasi gagal dikirim."
-        );
-        setLoadingAnnouncement(false);
-        return;
-      }
-
-      setAnnouncement({ title: "", content: "" });
-      setMessage("Informasi berhasil dipublikasikan dan notifikasi dikirim.");
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Terjadi kesalahan."
-      );
-    }
-
-    setLoadingAnnouncement(false);
-  }
-
-  async function saveSlide() {
-    setLoadingSlide(true);
-    setMessage("");
-
-    try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        setMessage("Silakan login dulu.");
-        setLoadingSlide(false);
-        return;
-      }
-
-      const { error } = await supabase.from("hero_slides").insert({
-        title: slide.title || null,
-        subtitle: slide.subtitle || null,
-        image_url: slide.imageUrl,
-        sort_order: 0,
-        is_active: true,
-        created_by: user.id,
-      });
-
-      if (error) {
-        setMessage(error.message);
-        setLoadingSlide(false);
-        return;
-      }
-
-      setSlide({ title: "", subtitle: "", imageUrl: "" });
-      setMessage("Slide berhasil ditambahkan.");
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Terjadi kesalahan."
-      );
-    }
-
-    setLoadingSlide(false);
-  }
 
   async function updateStatus(
     id: string,
@@ -162,7 +39,7 @@ export function AdminDashboard({ reports }: { reports: Report[] }) {
       }
 
       setMessage(
-        "Status laporan diperbarui. Silakan refresh untuk melihat data terbaru."
+        "Status laporan diperbarui. Refresh halaman untuk melihat data terbaru."
       );
     } catch (error) {
       setMessage(
@@ -176,63 +53,13 @@ export function AdminDashboard({ reports }: { reports: Report[] }) {
   return (
     <div className="grid gap-5 lg:grid-cols-[1.1fr_.9fr]">
       <div className="space-y-5">
-        <Card className="p-5">
-          <h2 className="text-xl font-bold">Kelola Informasi Teks</h2>
-          <div className="mt-4 space-y-4">
-            <Input
-              placeholder="Judul informasi"
-              value={announcement.title}
-              onChange={(e) =>
-                setAnnouncement({ ...announcement, title: e.target.value })
-              }
-            />
-            <Textarea
-              placeholder="Isi informasi"
-              value={announcement.content}
-              onChange={(e) =>
-                setAnnouncement({ ...announcement, content: e.target.value })
-              }
-            />
-            <Button
-              type="button"
-              onClick={saveAnnouncement}
-              disabled={loadingAnnouncement}
-            >
-              {loadingAnnouncement ? "Memproses..." : "Publikasikan info"}
-            </Button>
-          </div>
-        </Card>
+        <AdminAnnouncementForm />
 
         <Card className="p-5">
           <h2 className="text-xl font-bold">Kelola Slide Home</h2>
-          <div className="mt-4 space-y-4">
-            <Input
-              placeholder="Judul slide"
-              value={slide.title}
-              onChange={(e) => setSlide({ ...slide, title: e.target.value })}
-            />
-            <Input
-              placeholder="Subjudul"
-              value={slide.subtitle}
-              onChange={(e) =>
-                setSlide({ ...slide, subtitle: e.target.value })
-              }
-            />
-            <Input
-              placeholder="URL gambar"
-              value={slide.imageUrl}
-              onChange={(e) =>
-                setSlide({ ...slide, imageUrl: e.target.value })
-              }
-            />
-            <Button
-              type="button"
-              onClick={saveSlide}
-              disabled={loadingSlide}
-            >
-              {loadingSlide ? "Memproses..." : "Tambah slide"}
-            </Button>
-          </div>
+          <p className="mt-2 text-sm text-foreground/70">
+            Bagian ini bisa kamu sambungkan ke hero_slides kalau diperlukan.
+          </p>
         </Card>
       </div>
 
@@ -283,7 +110,7 @@ export function AdminDashboard({ reports }: { reports: Report[] }) {
           )}
         </div>
 
-        {message && <p className="mt-4 text-sm text-foreground/70">{message}</p>}
+        {message ? <p className="mt-4 text-sm text-foreground/70">{message}</p> : null}
       </Card>
     </div>
   );
