@@ -1,23 +1,23 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { createClient } from '@/lib/supabase-client';
-import { Button, Card, Input, Textarea } from '@/components/ui';
+import { useState } from "react";
+import { createClient } from "@/lib/supabase-client";
+import { Button, Card, Input, Textarea } from "@/components/ui";
 
 export function ReportForm() {
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [form, setForm] = useState({
-    title: '',
-    category: 'Umum',
-    description: '',
+    title: "",
+    category: "Umum",
+    description: "",
   });
 
   async function submitReport(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setMessage('');
+    setMessage("");
 
     try {
       const {
@@ -26,20 +26,20 @@ export function ReportForm() {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        setMessage('Silakan login dulu.');
+        setMessage("Silakan login dulu.");
         setLoading(false);
         return;
       }
 
       const { data, error } = await supabase
-        .from('reports')
+        .from("reports")
         .insert({
           user_id: user.id,
           title: form.title,
           category: form.category,
           description: form.description,
-          priority: 'medium',
-          status: 'pending',
+          priority: "medium",
+          status: "pending",
         })
         .select()
         .single();
@@ -50,9 +50,9 @@ export function ReportForm() {
         return;
       }
 
-      await fetch('/api/notify/admin-report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      await fetch("/api/notify/admin-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           reportId: data.id,
           title: data.title,
@@ -60,14 +60,14 @@ export function ReportForm() {
         }),
       });
 
-      setMessage('Laporan berhasil dikirim ke admin.');
+      setMessage("Laporan berhasil dikirim ke admin.");
       setForm({
-        title: '',
-        category: 'Umum',
-        description: '',
+        title: "",
+        category: "Umum",
+        description: "",
       });
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Terjadi kesalahan.');
+      setMessage(error instanceof Error ? error.message : "Terjadi kesalahan.");
     }
 
     setLoading(false);
@@ -100,13 +100,11 @@ export function ReportForm() {
         />
 
         <Button disabled={loading}>
-          {loading ? 'Mengirim...' : 'Kirim laporan'}
+          {loading ? "Mengirim..." : "Kirim laporan"}
         </Button>
       </form>
 
-      {message && (
-        <p className="mt-4 text-sm text-foreground/70">{message}</p>
-      )}
+      {message && <p className="mt-4 text-sm text-foreground/70">{message}</p>}
     </Card>
   );
 }

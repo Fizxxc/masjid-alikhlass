@@ -42,3 +42,8 @@ body {
 .dark .glass {
   background: linear-gradient(to bottom right, rgba(24,31,27,.9), rgba(24,31,27,.7));
 }
+
+#onesignal-bell-container,
+.onesignal-bell-launcher {
+  z-index: 9999 !important;
+}

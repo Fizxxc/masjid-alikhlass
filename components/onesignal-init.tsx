@@ -88,9 +88,8 @@ export function OneSignalInit() {
           const optedIn =
             OneSignal?.User?.PushSubscription?.optedIn ?? false;
 
-          const alreadyRegistered = sessionStorage.getItem(
-            `onesignal_registered_${session.user.id}`
-          );
+          const cacheKey = `onesignal_registered_${session.user.id}_${subscriptionId ?? "none"}`;
+          const alreadyRegistered = sessionStorage.getItem(cacheKey);
 
           if (!alreadyRegistered) {
             const res = await fetch("/api/push/register", {
@@ -109,10 +108,7 @@ export function OneSignalInit() {
             console.log("push/register result:", result);
 
             if (res.ok) {
-              sessionStorage.setItem(
-                `onesignal_registered_${session.user.id}`,
-                "true"
-              );
+              sessionStorage.setItem(cacheKey, "true");
             }
           }
         } catch (error) {

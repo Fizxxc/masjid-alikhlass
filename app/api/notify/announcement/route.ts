@@ -4,25 +4,28 @@ import { createServiceRoleClient } from "@/lib/supabase-admin";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { reportId, title, description } = body;
+    const { announcementId, title } = body;
 
     const supabase = createServiceRoleClient();
 
-    const { data: admins, error: adminError } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("role", "admin");
+    const { data: activeSubs, error: subError } = await supabase
+      .from("push_subscriptions")
+      .select("external_user_id")
+      .eq("is_active", true)
+      .not("external_user_id", "is", null);
 
-    if (adminError) {
-      return NextResponse.json({ error: adminError.message }, { status: 500 });
+    if (subError) {
+      return NextResponse.json({ error: subError.message }, { status: 500 });
     }
 
-    const adminIds = (admins ?? []).map((admin) => admin.id);
+    const userIds = Array.from(
+      new Set((activeSubs ?? []).map((x) => x.external_user_id).filter(Boolean))
+    );
 
-    if (adminIds.length === 0) {
+    if (userIds.length === 0) {
       return NextResponse.json({
         ok: true,
-        message: "Tidak ada admin yang menerima notif",
+        message: "Belum ada user yang subscribe notifikasi",
       });
     }
 
@@ -37,23 +40,22 @@ export async function POST(req: Request) {
         body: JSON.stringify({
           app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
           include_aliases: {
-            external_id: adminIds,
+            external_id: userIds,
           },
           target_channel: "push",
           headings: {
-            id: "Laporan baru masuk",
-            en: "Laporan baru masuk",
+            id: "Informasi baru masjid",
+            en: "Informasi baru masjid",
           },
           contents: {
-            id: title || "Ada laporan baru dari jamaah",
-            en: title || "Ada laporan baru dari jamaah",
+            id: title || "Ada pengumuman baru dari masjid",
+            en: title || "Ada pengumuman baru dari masjid",
           },
           data: {
-            type: "report",
-            reportId,
-            description: description ?? "",
+            type: "announcement",
+            announcementId,
           },
-          url: `${process.env.NEXT_PUBLIC_SITE_URL}/admin`,
+          url: `${process.env.NEXT_PUBLIC_SITE_URL}/`,
         }),
       }
     );
@@ -62,7 +64,7 @@ export async function POST(req: Request) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: result?.errors || result || "Gagal kirim notif" },
+        { error: result?.errors || result || "Gagal kirim notif pengumuman" },
         { status: 500 }
       );
     }
@@ -70,7 +72,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, result });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Gagal kirim notif" },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Terjadi kesalahan mengirim notifikasi pengumuman",
+      },
       { status: 500 }
     );
   }
