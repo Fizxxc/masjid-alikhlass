@@ -17,17 +17,20 @@ export function EnableNotificationButton() {
     setMessage("");
 
     try {
-      if (typeof window === "undefined") return;
+      if (typeof window === "undefined") {
+        setLoading(false);
+        return;
+      }
 
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       window.OneSignalDeferred.push(async function (OneSignal: any) {
         try {
           await OneSignal.Slidedown.promptPush();
 
-          const permission =
-            OneSignal?.Notifications?.permission ?? "default";
           const optedIn =
             OneSignal?.User?.PushSubscription?.optedIn ?? false;
+          const permission =
+            OneSignal?.Notifications?.permission ?? "default";
 
           if (optedIn || permission === "granted") {
             setMessage("Notifikasi berhasil diaktifkan.");
@@ -35,8 +38,8 @@ export function EnableNotificationButton() {
             setMessage("Izin notifikasi belum diberikan.");
           }
         } catch (error) {
-          console.error(error);
-          setMessage("Gagal memunculkan prompt notifikasi.");
+          console.error("Enable notification error:", error);
+          setMessage("Gagal mengaktifkan notifikasi.");
         } finally {
           setLoading(false);
         }
@@ -53,7 +56,10 @@ export function EnableNotificationButton() {
     setMessage("");
 
     try {
-      if (typeof window === "undefined") return;
+      if (typeof window === "undefined") {
+        setLoading(false);
+        return;
+      }
 
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       window.OneSignalDeferred.push(async function (OneSignal: any) {
@@ -96,13 +102,9 @@ export function EnableNotificationButton() {
         </button>
       </div>
 
-      {message ? (
-        <p className="text-sm text-white/70">{message}</p>
-      ) : (
-        <p className="text-sm text-white/70">
-          Aktifkan notifikasi untuk menerima update penting.
-        </p>
-      )}
+      <p className="text-sm text-white/70">
+        {message || "Aktifkan notifikasi untuk menerima update penting."}
+      </p>
     </div>
   );
 }

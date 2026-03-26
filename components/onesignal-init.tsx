@@ -13,7 +13,7 @@ export function OneSignalInit() {
   useEffect(() => {
     const supabase = createClient();
 
-    async function initOneSignal() {
+    async function boot() {
       if (typeof window === "undefined") return;
 
       const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
@@ -34,7 +34,42 @@ export function OneSignalInit() {
             appId,
             allowLocalhostAsSecureOrigin: isLocalhost,
             notifyButton: {
-              enable: false,
+              enable: true,
+              position: "bottom-right",
+              size: "medium",
+              theme: "default",
+              text: {
+                "tip.state.unsubscribed": "Aktifkan notifikasi",
+                "tip.state.subscribed": "Notifikasi aktif",
+                "tip.state.blocked": "Notifikasi diblokir",
+                "message.prenotify": "Klik untuk aktifkan notifikasi",
+                "message.action.subscribed": "Terima kasih sudah subscribe",
+                "message.action.resubscribed": "Notifikasi diaktifkan lagi",
+                "message.action.unsubscribed": "Notifikasi dimatikan",
+                "dialog.main.title": "Kelola notifikasi situs",
+                "dialog.main.button.subscribe": "Aktifkan",
+                "dialog.main.button.unsubscribe": "Matikan",
+              },
+            },
+            promptOptions: {
+              slidedown: {
+                prompts: [
+                  {
+                    type: "push",
+                    autoPrompt: false,
+                    text: {
+                      actionMessage:
+                        "Aktifkan notifikasi untuk menerima laporan dan update penting dari Masjid Al-Ikhlas.",
+                      acceptButton: "Aktifkan",
+                      cancelButton: "Nanti",
+                    },
+                    delay: {
+                      pageViews: 1,
+                      timeDelay: 5,
+                    },
+                  },
+                ],
+              },
             },
           });
 
@@ -57,28 +92,28 @@ export function OneSignalInit() {
             `onesignal_registered_${session.user.id}`
           );
 
-          if (alreadyRegistered === "true") return;
+          if (!alreadyRegistered) {
+            const res = await fetch("/api/push/register", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({
+                subscriptionId,
+                optedIn,
+              }),
+            });
 
-          const res = await fetch("/api/push/register", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({
-              subscriptionId,
-              optedIn,
-            }),
-          });
+            const result = await res.json().catch(() => null);
+            console.log("push/register result:", result);
 
-          const result = await res.json().catch(() => null);
-          console.log("push/register result:", result);
-
-          if (res.ok) {
-            sessionStorage.setItem(
-              `onesignal_registered_${session.user.id}`,
-              "true"
-            );
+            if (res.ok) {
+              sessionStorage.setItem(
+                `onesignal_registered_${session.user.id}`,
+                "true"
+              );
+            }
           }
         } catch (error) {
           console.error("OneSignal init error:", error);
@@ -86,7 +121,7 @@ export function OneSignalInit() {
       });
     }
 
-    initOneSignal();
+    boot();
   }, []);
 
   return null;
