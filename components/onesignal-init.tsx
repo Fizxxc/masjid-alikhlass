@@ -13,58 +13,80 @@ export function OneSignalInit() {
   useEffect(() => {
     const supabase = createClient();
 
-    async function init() {
+    async function initOneSignal() {
       if (typeof window === "undefined") return;
 
-      const alreadyRegistered = sessionStorage.getItem("onesignal_registered");
-      if (alreadyRegistered === "true") return;
+      const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
+      if (!appId) {
+        console.error("NEXT_PUBLIC_ONESIGNAL_APP_ID belum diisi");
+        return;
+      }
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const isLocalhost =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1";
 
       window.OneSignalDeferred = window.OneSignalDeferred || [];
 
       window.OneSignalDeferred.push(async function (OneSignal: any) {
-        await OneSignal.init({
-          appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID!,
-          allowLocalhostAsSecureOrigin: true,
-          notifyButton: {
-            enable: false,
-          },
-        });
+        try {
+          await OneSignal.init({
+            appId,
+            allowLocalhostAsSecureOrigin: isLocalhost,
+            notifyButton: {
+              enable: false,
+            },
+          });
 
-        if (!session?.user?.id || !session.access_token) return;
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
 
-        await OneSignal.login(session.user.id);
+          if (!session?.user?.id || !session.access_token) return;
 
-        await new Promise((resolve) => setTimeout(resolve, 1200));
+          await OneSignal.login(session.user.id);
 
-        const subscriptionId = OneSignal?.User?.PushSubscription?.id ?? null;
-        const optedIn = OneSignal?.User?.PushSubscription?.optedIn ?? false;
+          await new Promise((resolve) => setTimeout(resolve, 1200));
 
-        const res = await fetch("/api/push/register", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            subscriptionId,
-            optedIn,
-          }),
-        });
+          const subscriptionId =
+            OneSignal?.User?.PushSubscription?.id ?? null;
+          const optedIn =
+            OneSignal?.User?.PushSubscription?.optedIn ?? false;
 
-        const result = await res.json().catch(() => null);
-        console.log("push/register result:", result);
+          const alreadyRegistered = sessionStorage.getItem(
+            `onesignal_registered_${session.user.id}`
+          );
 
-        if (res.ok) {
-          sessionStorage.setItem("onesignal_registered", "true");
+          if (alreadyRegistered === "true") return;
+
+          const res = await fetch("/api/push/register", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              subscriptionId,
+              optedIn,
+            }),
+          });
+
+          const result = await res.json().catch(() => null);
+          console.log("push/register result:", result);
+
+          if (res.ok) {
+            sessionStorage.setItem(
+              `onesignal_registered_${session.user.id}`,
+              "true"
+            );
+          }
+        } catch (error) {
+          console.error("OneSignal init error:", error);
         }
       });
     }
 
-    init();
+    initOneSignal();
   }, []);
 
   return null;

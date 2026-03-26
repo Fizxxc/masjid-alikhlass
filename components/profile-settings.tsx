@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTheme } from 'next-themes';
 import { createClient } from '@/lib/supabase-client';
 import { Button, Card, Input } from '@/components/ui';
+import { EnableNotificationButton } from "@/components/enable-notification-button";
 
 type Profile = {
   id: string;
@@ -86,10 +87,11 @@ export function ProfileSettings({ profile }: { profile: Profile | null }) {
       </Card>
 
       <Card className="p-5">
-        <h3 className="text-lg font-bold">Notifikasi</h3>
-        <div className="mt-4 flex gap-2">
-          <Button type="button" onClick={() => updatePush(true)}>Aktifkan</Button>
-          <Button type="button" className="bg-transparent text-foreground border" onClick={() => updatePush(false)}>Matikan</Button>
+        <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
+          <h3 className="text-xl font-bold">Notifikasi</h3>
+          <div className="mt-4">
+            <EnableNotificationButton />
+          </div>
         </div>
       </Card>
 
